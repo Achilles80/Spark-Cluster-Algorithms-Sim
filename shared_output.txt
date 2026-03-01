@@ -1,0 +1,2 @@
+[22:19:41.895] Executor 1: Partition 1 result — word_count={spark:15, cluster:10, data:13}
+[22:19:44.911] Executor 2: Partition 2 result — word_count={spark:25, cluster:17, data:25}
