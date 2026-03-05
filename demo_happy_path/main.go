@@ -89,7 +89,7 @@ func runExecutor(id int) {
 
 	// Step 2: Request token
 	log.Info("Requesting critical section (token) to write to shared output...")
-	addr := fmt.Sprintf("%s:%d", config.MASTER_HOST, config.TokenManagerPort)
+	addr := fmt.Sprintf("%s:%d", config.TokenManagerHost, config.TokenManagerPort)
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
 		log.Error("Cannot connect to Token Manager: %v", err)
