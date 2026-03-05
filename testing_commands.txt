@@ -1,0 +1,101 @@
+================================================================================
+  SPARK CLUSTER SIMULATION — TESTING COMMANDS (2 LAPTOPS)
+================================================================================
+
+BEFORE TESTING:
+  1. Both laptops connect to SAME WiFi (or same mobile hotspot)
+  2. Run "ipconfig" on both → note the Wi-Fi IPv4 addresses
+  3. Run "ping <other laptop's IP>" → must get replies
+  4. Edit config/config.go on BOTH laptops with the correct IPs
+  5. Allow Go through Windows Firewall when prompted
+
+
+================================================================================
+  TEST 1: LEADER ELECTION (Bully Algorithm)
+================================================================================
+
+Machine A (your laptop):
+  Terminal 1:  go run ./cluster_manager --id 1
+  Terminal 2:  go run ./cluster_manager --id 2
+
+Machine B (friend's laptop):
+  Terminal 1:  go run ./cluster_manager --id 3
+
+What to do:
+  - Wait 10 seconds for election to complete
+  - Node 3 (highest ID) becomes leader
+  - Kill Node 3 on Machine B with Ctrl+C
+  - Watch Machine A — Node 2 detects failure and becomes new leader
+
+Stop: Ctrl+C on all terminals before next test
+
+
+================================================================================
+  TEST 2: DEADLOCK DETECTION (Wait-For-Graph)
+================================================================================
+
+Machine A (your laptop):
+  Terminal 1:  go run ./deadlock
+
+Machine B (friend's laptop):
+  Terminal 1:  go run ./deadlock_client
+
+What to do:
+  - Just watch — it runs automatically
+  - Client registers resources and tasks
+  - Creates circular wait → DEADLOCK DETECTED
+  - Aborts lowest-priority task → DEADLOCK RESOLVED
+
+Stop: Ctrl+C on Machine A's terminal before next test
+
+
+================================================================================
+  TEST 3: MUTUAL EXCLUSION (Centralized Token)
+================================================================================
+
+Machine A (your laptop):
+  Terminal 1:  go run ./token_manager
+
+Machine B (friend's laptop):
+  Terminal 1:  go run ./executor --id 1
+  Terminal 2:  go run ./executor --id 2    (run a few seconds after executor 1)
+
+What to do:
+  - Executor 1 gets token first, writes to shared_output.txt
+  - Executor 2 waits in queue
+  - Executor 1 releases → Executor 2 gets token → writes
+  - Both write sequentially — no data corruption
+
+Stop: Ctrl+C on Machine A's terminal before next test
+
+
+================================================================================
+  ALL 3 RUNNING SIMULTANEOUSLY
+================================================================================
+
+Machine A (your laptop) — open 4 terminals:
+  Terminal 1:  go run ./cluster_manager --id 1
+  Terminal 2:  go run ./cluster_manager --id 2
+  Terminal 3:  go run ./token_manager
+  Terminal 4:  go run ./deadlock
+
+Machine B (friend's laptop) — open 3 terminals:
+  Terminal 1:  go run ./cluster_manager --id 3
+  Terminal 2:  go run ./executor --id 1
+  Terminal 3:  go run ./deadlock_client
+
+Start order:
+  1. Machine A: start all 4 terminals
+  2. Wait 5 seconds
+  3. Machine B: start cluster_manager --id 3 first
+  4. Wait 5 seconds
+  5. Machine B: start executor and deadlock_client
+
+Ports used (no conflicts):
+  Cluster Manager 1 → port 5001 (Machine A)
+  Cluster Manager 2 → port 5002 (Machine A)
+  Cluster Manager 3 → port 5003 (Machine B)
+  Token Manager     → port 6000 (Machine A)
+  Deadlock Detector → port 6100 (Machine A)
+
+Stop: Ctrl+C on all terminals when done
