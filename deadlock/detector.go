@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"net"
+	"os"
+	"spark-cluster-sim/config"
 	"spark-cluster-sim/logger"
 	"sync"
 	"time"
@@ -19,6 +23,24 @@ type Task struct {
 	Priority int
 	Holding  []string // Resource IDs currently held
 	Waiting  string   // Resource ID waiting for ("" if not waiting)
+}
+
+// DeadlockMessage represents a message sent between client and server
+type DeadlockMessage struct {
+	Type       string `json:"type"`
+	TaskID     string `json:"task_id,omitempty"`
+	ResourceID string `json:"resource_id,omitempty"`
+	Priority   int    `json:"priority,omitempty"`
+}
+
+// DeadlockResponse represents a response from the server to the client
+type DeadlockResponse struct {
+	Type     string   `json:"type"`
+	Success  bool     `json:"success"`
+	Message  string   `json:"message,omitempty"`
+	Detected bool     `json:"detected,omitempty"`
+	Cycle    []string `json:"cycle,omitempty"`
+	Victim   string   `json:"victim,omitempty"`
 }
 
 // WaitForGraph implements deadlock detection using a directed graph
@@ -252,7 +274,89 @@ func formatCycle(cycle []string) string {
 	return result
 }
 
-// RunDeadlockDemo runs a complete deadlock scenario demonstration
+// ===== TCP SERVER FOR 2-MACHINE SETUP =====
+
+// StartServer starts the deadlock detector as a TCP server
+func (wfg *WaitForGraph) StartServer() {
+	addr := fmt.Sprintf(":%d", config.DeadlockDetectorPort)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		wfg.Log.Error("Failed to start Deadlock Detector server: %v", err)
+		os.Exit(1)
+	}
+	defer listener.Close()
+
+	wfg.Log.Info("Deadlock Detector server started on port %d", config.DeadlockDetectorPort)
+	wfg.Log.Info("Waiting for Spark Job resource requests...")
+	fmt.Println()
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
+		}
+		wfg.Log.Info("New client connected from %s", conn.RemoteAddr().String())
+		go wfg.handleClient(conn)
+	}
+}
+
+// handleClient processes messages from a connected deadlock client
+func (wfg *WaitForGraph) handleClient(conn net.Conn) {
+	defer conn.Close()
+	decoder := json.NewDecoder(conn)
+	encoder := json.NewEncoder(conn)
+
+	for {
+		var msg DeadlockMessage
+		if err := decoder.Decode(&msg); err != nil {
+			return
+		}
+
+		var resp DeadlockResponse
+
+		switch msg.Type {
+		case "REGISTER_RESOURCE":
+			wfg.AddResource(msg.ResourceID)
+			resp = DeadlockResponse{Type: "REGISTER_RESOURCE_ACK", Success: true, Message: fmt.Sprintf("Resource %s registered", msg.ResourceID)}
+
+		case "REGISTER_TASK":
+			wfg.AddTask(msg.TaskID, msg.Priority)
+			resp = DeadlockResponse{Type: "REGISTER_TASK_ACK", Success: true, Message: fmt.Sprintf("Task %s registered (priority %d)", msg.TaskID, msg.Priority)}
+
+		case "ACQUIRE_RESOURCE":
+			acquired := wfg.AcquireResource(msg.TaskID, msg.ResourceID)
+			if acquired {
+				resp = DeadlockResponse{Type: "RESOURCE_ACQUIRED", Success: true, Message: fmt.Sprintf("%s acquired %s", msg.TaskID, msg.ResourceID)}
+			} else {
+				resp = DeadlockResponse{Type: "RESOURCE_WAITING", Success: false, Message: fmt.Sprintf("%s waiting for %s", msg.TaskID, msg.ResourceID)}
+			}
+
+		case "RELEASE_RESOURCE":
+			wfg.ReleaseResource(msg.TaskID, msg.ResourceID)
+			resp = DeadlockResponse{Type: "RESOURCE_RELEASED", Success: true, Message: fmt.Sprintf("%s released %s", msg.TaskID, msg.ResourceID)}
+
+		case "DETECT_DEADLOCK":
+			detected, cycle := wfg.DetectDeadlock()
+			if detected {
+				victim := wfg.ResolveDeadlock(cycle)
+				resp = DeadlockResponse{Type: "DEADLOCK_RESULT", Detected: true, Cycle: cycle, Victim: victim}
+			} else {
+				resp = DeadlockResponse{Type: "DEADLOCK_RESULT", Detected: false}
+			}
+
+		case "VERIFY":
+			detected, _ := wfg.DetectDeadlock()
+			resp = DeadlockResponse{Type: "VERIFY_RESULT", Detected: detected}
+
+		default:
+			resp = DeadlockResponse{Type: "ERROR", Success: false, Message: "Unknown message type"}
+		}
+
+		encoder.Encode(resp)
+	}
+}
+
+// RunDeadlockDemo runs a complete deadlock scenario demonstration (single-machine)
 func RunDeadlockDemo() {
 	logger.Banner("SPARK DEADLOCK DETECTION — WAIT-FOR-GRAPH")
 	fmt.Println("  Simulating Apache Spark task resource contention")
@@ -330,5 +434,13 @@ func RunDeadlockDemo() {
 }
 
 func main() {
-	RunDeadlockDemo()
+	// If run standalone, start as a TCP server for 2-machine setup
+	logger.Banner("SPARK DEADLOCK DETECTOR — WAIT-FOR-GRAPH SERVER")
+	fmt.Println("  Simulating Apache Spark task resource contention detector")
+	fmt.Println("  Listens for Spark Job resource requests over TCP")
+	fmt.Println("  Algorithm: Wait-For-Graph with DFS cycle detection")
+	fmt.Println()
+
+	wfg := NewWaitForGraph()
+	wfg.StartServer()
 }
