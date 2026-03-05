@@ -153,27 +153,50 @@ go run ./executor --id 2
 
 ---
 
-## 2-Machine Setup
+## Multi-Machine Setup (3 Machines)
 
-To satisfy the **"Min 2 Machines"** requirement:
+Each Cluster Manager runs on its own machine — **truly distributed leader election**.
 
-1. Connect both laptops to the **same Wi-Fi / mobile hotspot**
-2. On **Machine A** (your laptop), find your IP: `ipconfig` (Windows) or `ifconfig` (Linux/Mac)
-3. Edit `config/config.go` and change:
+1. Connect all machines to the **same Wi-Fi / mobile hotspot**
+2. Find each machine's IP: `ipconfig` (Windows) or `ifconfig` (Linux/Mac)
+3. Edit `config/config.go` on **every machine** and set:
    ```go
-   const MASTER_HOST = "192.168.x.x"  // Machine A's IP
+   var NodeHosts = map[int]string{
+       1: "192.168.x.10",  // Machine A's IP
+       2: "192.168.x.11",  // Machine B's IP
+       3: "192.168.x.12",  // Machine C's IP
+   }
+   const TokenManagerHost = "192.168.x.10"      // Machine running Token Manager
+   const DeadlockDetectorHost = "192.168.x.10"  // Machine running Deadlock Detector
    ```
-4. **Machine A** runs: Cluster Managers, Token Manager, Deadlock Detector
-5. **Machine B** runs: Executors (they connect to Machine A's IP automatically)
+4. Run one Cluster Manager per machine + distribute other services:
+
+```bash
+# Machine A (IP: 192.168.x.10):
+go run ./cluster_manager --id 1
+go run ./token_manager
+
+# Machine B (IP: 192.168.x.11):
+go run ./cluster_manager --id 2
+go run ./executor --id 1
+
+# Machine C (IP: 192.168.x.12):
+go run ./cluster_manager --id 3
+go run ./executor --id 2
+```
+
+### 2-Machine Setup (Alternative)
+
+If you only have 2 machines:
 
 ```bash
 # Machine A:
 go run ./cluster_manager --id 1
 go run ./cluster_manager --id 2
-go run ./cluster_manager --id 3
 go run ./token_manager
 
 # Machine B:
+go run ./cluster_manager --id 3
 go run ./executor --id 1
 go run ./executor --id 2
 ```
