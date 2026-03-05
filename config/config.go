@@ -1,11 +1,25 @@
 package config
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // ===== NETWORK CONFIGURATION =====
-// Change MASTER_HOST to the IP of the machine running Cluster Managers
-// when running on 2 separate machines. Use "127.0.0.1" for local testing.
-const MASTER_HOST = "127.0.0.1"
+// Each Cluster Manager node can run on a different machine.
+// Set each node's IP to the machine that will run it.
+// Use "127.0.0.1" for all when testing locally on a single machine.
+var NodeHosts = map[int]string{
+	1: "192.168.0.113", // Machine A — Cluster Manager Node 1
+	2: "192.168.0.113", // Machine B — Cluster Manager Node 2
+	3: "192.168.100.3", // Machine C — Cluster Manager Node 3
+}
+
+// TokenManagerHost is the IP of the machine running the Token Manager.
+const TokenManagerHost = "192.168.0.113"
+
+// DeadlockDetectorHost is the IP of the machine running the Deadlock Detector.
+const DeadlockDetectorHost = "192.168.0.113"
 
 // Base ports for different components
 const (
@@ -14,13 +28,22 @@ const (
 	DeadlockDetectorPort   = 6100
 )
 
+// NodeAddr returns the "host:port" address for a given Cluster Manager node ID.
+func NodeAddr(nodeID int) string {
+	host, ok := NodeHosts[nodeID]
+	if !ok {
+		host = "127.0.0.1"
+	}
+	return fmt.Sprintf("%s:%d", host, ClusterManagerBasePort+nodeID)
+}
+
 // ===== TIMING CONFIGURATION =====
 const (
-	HeartbeatInterval  = 2 * time.Second
-	HeartbeatTimeout   = 6 * time.Second // 3 missed heartbeats
-	ElectionTimeout    = 3 * time.Second
-	TaskDuration       = 2 * time.Second // Simulated Spark task processing time
-	WriteDuration      = 1 * time.Second // Time spent writing to shared output
+	HeartbeatInterval     = 2 * time.Second
+	HeartbeatTimeout      = 6 * time.Second // 3 missed heartbeats
+	ElectionTimeout       = 3 * time.Second
+	TaskDuration          = 2 * time.Second // Simulated Spark task processing time
+	WriteDuration         = 1 * time.Second // Time spent writing to shared output
 	DeadlockCheckInterval = 3 * time.Second
 )
 
@@ -34,10 +57,10 @@ const (
 // Message types used across the system
 const (
 	// Leader Election messages
-	MsgElection    = "ELECTION"
-	MsgAlive       = "ALIVE"
-	MsgCoordinator = "COORDINATOR"
-	MsgHeartbeat   = "HEARTBEAT"
+	MsgElection     = "ELECTION"
+	MsgAlive        = "ALIVE"
+	MsgCoordinator  = "COORDINATOR"
+	MsgHeartbeat    = "HEARTBEAT"
 	MsgHeartbeatAck = "HEARTBEAT_ACK"
 
 	// Mutual Exclusion messages
