@@ -164,8 +164,7 @@ func (cm *ClusterManager) startElection() {
 
 	// Send ELECTION to all nodes with higher IDs
 	for i := cm.ID + 1; i <= config.MaxClusterManagers; i++ {
-		port := config.ClusterManagerBasePort + i
-		addr := fmt.Sprintf("%s:%d", config.MASTER_HOST, port)
+		addr := config.NodeAddr(i)
 
 		cm.Log.Election("Sending ELECTION to Node %d at %s", i, addr)
 
@@ -212,8 +211,7 @@ func (cm *ClusterManager) declareCoordinator() {
 			continue
 		}
 		go func(nodeID int) {
-			port := config.ClusterManagerBasePort + nodeID
-			addr := fmt.Sprintf("%s:%d", config.MASTER_HOST, port)
+			addr := config.NodeAddr(nodeID)
 			conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
 			if err != nil {
 				return
@@ -244,8 +242,7 @@ func (cm *ClusterManager) heartbeatSender() {
 						continue
 					}
 					go func(nodeID int) {
-						port := config.ClusterManagerBasePort + nodeID
-						addr := fmt.Sprintf("%s:%d", config.MASTER_HOST, port)
+						addr := config.NodeAddr(nodeID)
 						conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
 						if err != nil {
 							return
