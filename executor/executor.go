@@ -75,7 +75,7 @@ func (e *Executor) Run() {
 
 // requestToken connects to Token Manager and requests the token
 func (e *Executor) requestToken() net.Conn {
-	addr := fmt.Sprintf("%s:%d", config.MASTER_HOST, config.TokenManagerPort)
+	addr := fmt.Sprintf("%s:%d", config.TokenManagerHost, config.TokenManagerPort)
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
 		e.Log.Error("Cannot connect to Token Manager at %s: %v", addr, err)
@@ -138,7 +138,7 @@ func main() {
 	logger.Banner(fmt.Sprintf("SPARK EXECUTOR — WORKER NODE %d", *executorID))
 	fmt.Println("  Simulating Apache Spark Executor processing a data partition")
 	fmt.Println("  Uses token-based mutual exclusion for shared output writes")
-	fmt.Printf("  Executor ID: %d | Token Manager: %s:%d\n\n", *executorID, config.MASTER_HOST, config.TokenManagerPort)
+	fmt.Printf("  Executor ID: %d | Token Manager: %s:%d\n\n", *executorID, config.TokenManagerHost, config.TokenManagerPort)
 
 	executor := NewExecutor(*executorID)
 	executor.Run()
