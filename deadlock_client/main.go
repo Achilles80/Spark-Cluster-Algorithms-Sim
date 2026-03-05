@@ -54,14 +54,14 @@ func main() {
 	fmt.Println()
 	fmt.Println("  Spark Mapping: Task/Resource Allocation contention")
 	fmt.Println("  Algorithm: Wait-For-Graph with DFS Cycle Detection")
-	fmt.Printf("  Deadlock Detector: %s:%d\n", config.MASTER_HOST, config.DeadlockDetectorPort)
+	fmt.Printf("  Deadlock Detector: %s:%d\n", config.DeadlockDetectorHost, config.DeadlockDetectorPort)
 	fmt.Println()
 	time.Sleep(1 * time.Second)
 
 	log := logger.NewDeadlockLogger()
 
 	// Connect to the Deadlock Detector server
-	addr := fmt.Sprintf("%s:%d", config.MASTER_HOST, config.DeadlockDetectorPort)
+	addr := fmt.Sprintf("%s:%d", config.DeadlockDetectorHost, config.DeadlockDetectorPort)
 	log.Info("Connecting to Deadlock Detector at %s...", addr)
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
