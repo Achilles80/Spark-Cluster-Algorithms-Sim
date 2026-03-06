@@ -10,16 +10,16 @@ import (
 // Set each node's IP to the machine that will run it.
 // Use "127.0.0.1" for all when testing locally on a single machine.
 var NodeHosts = map[int]string{
-	1: "172.26.90.254", // Machine A — Cluster Manager Node 1
-	2: "172.26.90.254", // Machine B — Cluster Manager Node 2
-	3: "172.26.90.4",   // Machine C — Cluster Manager Node 3
+	1: "10.96.9.254", // Machine A — Cluster Manager Node 1
+	2: "10.96.9.254", // Machine B — Cluster Manager Node 2
+	3: "10.96.9.4",   // Machine C — Cluster Manager Node 3
 }
 
 // TokenManagerHost is the IP of the machine running the Token Manager.
-const TokenManagerHost = "172.26.90.254"
+const TokenManagerHost = "10.96.9.254"
 
 // DeadlockDetectorHost is the IP of the machine running the Deadlock Detector.
-const DeadlockDetectorHost = "172.26.90.254"
+const DeadlockDetectorHost = "10.96.9.254"
 
 // Base ports for different components
 const (
