@@ -43,7 +43,7 @@ const (
 	HeartbeatTimeout      = 6 * time.Second // 3 missed heartbeats
 	ElectionTimeout       = 3 * time.Second
 	TaskDuration          = 2 * time.Second // Simulated Spark task processing time
-	WriteDuration         = 1 * time.Second // Time spent writing to shared output
+	WriteDuration         = 10 * time.Second // Time spent writing to shared output (long enough to start 2nd executor)
 	DeadlockCheckInterval = 3 * time.Second
 )
 
