@@ -212,7 +212,7 @@ func (cm *ClusterManager) declareCoordinator() {
 		}
 		go func(nodeID int) {
 			addr := config.NodeAddr(nodeID)
-			conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
+			conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
 			if err != nil {
 				cm.Log.Warn("Could not send COORDINATOR to Node %d at %s: %v", nodeID, addr, err)
 				return
@@ -244,7 +244,7 @@ func (cm *ClusterManager) heartbeatSender() {
 					}
 					go func(nodeID int) {
 						addr := config.NodeAddr(nodeID)
-						conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
+						conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
 						if err != nil {
 							cm.Log.Warn("Heartbeat to Node %d failed: %v", nodeID, err)
 							return
