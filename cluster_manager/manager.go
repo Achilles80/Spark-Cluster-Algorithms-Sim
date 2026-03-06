@@ -212,7 +212,7 @@ func (cm *ClusterManager) declareCoordinator() {
 		}
 		go func(nodeID int) {
 			addr := config.NodeAddr(nodeID)
-			conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+			conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
 			if err != nil {
 				cm.Log.Warn("Could not send COORDINATOR to Node %d at %s: %v", nodeID, addr, err)
 				return
