@@ -11,8 +11,8 @@ import (
 // Use "127.0.0.1" for all when testing locally on a single machine.
 var NodeHosts = map[int]string{
 	1: "10.96.9.254", // Machine A — Cluster Manager Node 1
-	2: "10.96.9.254", // Machine B — Cluster Manager Node 2
-	3: "10.96.9.4",   // Machine C — Cluster Manager Node 3
+	2: "10.96.9.4", // Machine B — Cluster Manager Node 2
+	3: "10.96.9.145",   // Machine C — Cluster Manager Node 3
 }
 
 // TokenManagerHost is the IP of the machine running the Token Manager.
